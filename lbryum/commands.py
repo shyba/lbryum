@@ -1887,6 +1887,34 @@ class Commands(object):
         return fee
 
     @command('w')
+    def get_max_spendable_amount_for_claim(self, claim_name):
+        """
+        Gets the confirmed balance plus the claim's bid amount
+
+        :param claim_name: the claim_name for which to get the amount for
+        :returns float, the maximum amount that can be sent for the claim
+        """
+
+        wallet_balance = self.getbalance(exclude_claimtrietx=True).get('confirmed')
+        my_claims = [claim
+                     for claim in self.getnameclaims(include_supports=False,
+                                                     skip_validate_signatures=True)
+                     if claim['name'] == claim_name]
+        if len(my_claims) > 1:
+            return {'success': False,
+                    'reason': "Multiple claims (%i) already exist for %s, "
+                              "dont know which claim to update" % (len(my_claims), claim_name)}
+        elif my_claims and not my_claims[0]['is_spent']:
+            txid = my_claims[0]['txid']
+            nout = my_claims[0]['nout']
+            claim_utxo = self.wallet.get_spendable_claimtrietx_coin(txid, nout)
+            claim_amount = claim_utxo['value'] / COIN
+            return float(Decimal(wallet_balance) + Decimal(claim_amount))
+        else:
+            return float(wallet_balance)
+
+
+    @command('w')
     def verify_claim_schema(self, val):
         """
         Parse an encoded claim value

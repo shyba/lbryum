@@ -46,6 +46,7 @@ labeled as 2.7.1. Subsequent releases will follow
   * Added `value` and `claim_address` fields to response from `claim`, `update`, and `claimcertificate`
   * Added `no_password` parameter to `restore` command
   * Added `--chain` parameter to command line to specify `lbrycrd_regtest` or `lbrycrd_testnet` instead of default `lbrycrd_main`
+  * `get_max_spendable_amount_for_claim` to get the max amount that can be used to update a claim
 
 ### Removed
   * Removed `tiphistory`, `paytoandsend`, `paytomany`, and `paytomanyandsend` commands
