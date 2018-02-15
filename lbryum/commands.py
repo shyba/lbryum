@@ -27,7 +27,7 @@ from lbryum.hashing import Hash, hash_160, hash_encode
 from lbryum.claims import verify_proof
 from lbryum.lbrycrd import hash_160_to_bc_address, is_address, decode_claim_id_hex
 from lbryum.lbrycrd import encode_claim_id_hex, encrypt_message, public_key_from_private_key
-from lbryum.lbrycrd import verify_message
+from lbryum.lbrycrd import address_from_private_key, verify_message
 from lbryum.base import base_decode
 from lbryum.transaction import Transaction
 from lbryum.transaction import decode_claim_script, deserialize as deserialize_transaction
@@ -472,18 +472,44 @@ class Commands(object):
         broadcasted unless the broadcast option is specified."""
         privkeys = privkey if type(privkey) is list else [privkey]
         self.nocheck = nocheck
-        dest = self._resolver(destination)
         if tx_fee is None:
             tx_fee = 0.0001
         fee = int(Decimal(tx_fee) * COIN)
-        tx = Transaction.sweep(privkeys, self.network, dest, fee)
+
+        inputs = []
+        keypairs = {}
+        for privkey in privkeys:
+            pubkey = public_key_from_private_key(privkey)
+            address = address_from_private_key(privkey)
+            u = self.network.synchronous_get(('blockchain.address.listunspent', [address]))
+            pay_script = Transaction.pay_script(TYPE_ADDRESS, address)
+            for item in u:
+                item['scriptPubKey'] = pay_script
+                item['redeemPubkey'] = pubkey
+                item['address'] = address
+                item['prevout_hash'] = item['tx_hash']
+                item['prevout_n'] = item['tx_pos']
+                item['pubkeys'] = [pubkey]
+                item['x_pubkeys'] = [pubkey]
+                item['signatures'] = [None]
+                item['num_sig'] = 1
+            inputs += u
+            keypairs[pubkey] = privkey
+
+        if not inputs:
+            return {'success': False, 'reason': 'No unspent inputs.'}
+
+        total = sum(i.get('value') for i in inputs) - fee
+        outputs = [(TYPE_ADDRESS, destination, total)]
+        tx = Transaction.from_io(inputs, outputs)
+        tx.sign(keypairs)
 
         txid = None
         if broadcast:
             txid = self.broadcast(str(tx))
 
         return {
-            'success': tx is not None,
+            'success': True,
             'tx': str(tx),
             'txid': txid,
             'fee': str(Decimal(tx_fee) / COIN)

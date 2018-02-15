@@ -10,7 +10,7 @@ from lbryum.opcodes import opcodes, match_decoded, script_GetOp
 from lbryum.bcd_data_stream import BCDataStream
 from lbryum.hashing import Hash, hash_160, hash_encode
 from lbryum.lbrycrd import hash_160_to_bc_address, bc_address_to_hash_160, op_push
-from lbryum.lbrycrd import address_from_private_key, point_to_ser, MyVerifyingKey, MySigningKey
+from lbryum.lbrycrd import point_to_ser, MyVerifyingKey, MySigningKey
 from lbryum.lbrycrd import public_key_to_bc_address, regenerate_key, public_key_from_private_key
 from lbryum.lbrycrd import encode_claim_id_hex, claim_id_hash
 from lbryum.util import print_error, profiler, var_int, int_to_hex, parse_sig, rev_hex
@@ -364,37 +364,6 @@ class Transaction(object):
         self._inputs = inputs
         self._outputs = outputs
         self.locktime = locktime
-        return self
-
-    @classmethod
-    def sweep(cls, privkeys, network, to_address, fee):
-        inputs = []
-        keypairs = {}
-        for privkey in privkeys:
-            pubkey = public_key_from_private_key(privkey)
-            address = address_from_private_key(privkey)
-            u = network.synchronous_get(('blockchain.address.listunspent', [address]))
-            pay_script = cls.pay_script(TYPE_ADDRESS, address)
-            for item in u:
-                item['scriptPubKey'] = pay_script
-                item['redeemPubkey'] = pubkey
-                item['address'] = address
-                item['prevout_hash'] = item['tx_hash']
-                item['prevout_n'] = item['tx_pos']
-                item['pubkeys'] = [pubkey]
-                item['x_pubkeys'] = [pubkey]
-                item['signatures'] = [None]
-                item['num_sig'] = 1
-            inputs += u
-            keypairs[pubkey] = privkey
-
-        if not inputs:
-            return
-
-        total = sum(i.get('value') for i in inputs) - fee
-        outputs = [(TYPE_ADDRESS, to_address, total)]
-        self = cls.from_io(inputs, outputs)
-        self.sign(keypairs)
         return self
 
     @classmethod

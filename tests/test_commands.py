@@ -8,6 +8,7 @@ from lbryschema.signer import SECP256k1
 from lbryum import main
 from lbryum import __version__
 from lbryum.errors import NotEnoughFunds
+from lbryum.transaction import Transaction
 from test_data import SAMPLE_CLAIMS_FOR_NAME_RESULT, SAMPLE_CLAIMTRIE_GETVALUE_RESULT,\
     SAMPLE_CLAIMTRIE_GETVALUEFORURI_RESULT, SECP256K1_PRIVATE_KEY
 
@@ -709,6 +710,51 @@ class TestAbandonCommand(unittest.TestCase):
         self.assertEqual(sent._inputs[2]['value'], 12000)
         self.assertEqual(len(sent._outputs), 1)
         self.assertEqual(sent._outputs[0][2], 600)
+
+
+class TestSweepCommand(unittest.TestCase):
+
+    private_key = "L52XzL2cMkHxqxBXRyEpnPQZGUs3uKiL3R11XbAdHigRzDozKZeW"
+
+    def test_sweep_no_unspent(self):
+        cmds = MocCommands()
+        cmds.network = MocNetwork({
+            'blockchain.address.listunspent': lambda _: []
+        })
+        destination = cmds.wallet.create_new_address()
+        result = cmds.sweep(self.private_key, destination)
+        self.assertEqual(False, result['success'])
+
+    def test_sweep(self):
+        cmds = MocCommands()
+        cmds.wallet.add_address_transaction(120000)
+        cmds.wallet.add_address_transaction(120000)
+        unspent = []
+        for tx in cmds.wallet.transactions.values():
+            for output in tx._outputs:
+                unspent.append((tx.hash(), output))
+        cmds.network = MocNetwork({
+            'blockchain.address.listunspent': lambda _: [{
+                'tx_hash': tx_hash,
+                'tx_pos': 1,
+                'address': address,
+                'coinbase': False,
+                'height': 2,
+                'is_claim': False,
+                'is_support': False,
+                'is_update': False,
+                'prevout_hash': 'df303881e9014cce89c7acf55b124372e22979284baa99bb9fa178a9d35c97cb',
+                'prevout_n': 0,
+                'value': amount
+            } for (tx_hash, (type, address, amount)) in unspent]
+        })
+        destination = cmds.wallet.create_new_address()
+        result = cmds.sweep(self.private_key, destination)
+        self.assertEqual(True, result['success'])
+        sent = Transaction(result['tx'])
+        sent.deserialize()
+        self.assertEqual(len(sent._outputs), 1)
+        self.assertEqual(sent._outputs[0][2], 230000)
 
 
 class FormatTests(unittest.TestCase):
