@@ -466,11 +466,11 @@ class Commands(object):
         return out['address']
 
     @command('n')
-    def sweep(self, privkey, destination, tx_fee=None, nocheck=False, broadcast=False):
+    def sweep(self, private_key, destination, tx_fee=None, nocheck=False, broadcast=False):
         """Sweep private keys. Returns a transaction that spends UTXOs from
         privkey to a destination address. The transaction is not
         broadcasted unless the broadcast option is specified."""
-        privkeys = privkey if type(privkey) is list else [privkey]
+        privkeys = private_key if type(private_key) is list else [private_key]
         self.nocheck = nocheck
         if tx_fee is None:
             tx_fee = 0.0001
