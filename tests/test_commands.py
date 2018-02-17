@@ -659,6 +659,18 @@ class TestSupportCommand(unittest.TestCase):
         self.assertEqual(False, out['success'])
         self.assertEqual('Not enough funds', out['reason'])
 
+    def test_get_max_spendable_amount_for_claim(self):
+        cmds = MocCommands()
+        cmds.wallet.add_address_transaction(800000000)
+        cmds.wallet.add_claim_transaction('test', 200000000)
+        cmds.wallet.add_claim_transaction('test1', 200000000)
+        cmds.wallet.add_claim_transaction('test1', 300000000)
+        amount = cmds.get_max_spendable_amount_for_claim("test")
+        self.assertEqual(10.0, amount)
+        amount = cmds.get_max_spendable_amount_for_claim("test1")
+        self.assertEqual(False, amount[success])
+        amount = cmds.get_max_spendable_amount_for_claim("test2")
+        self.assertEqual(8.0, amount)
 
 class TestSendWithSupportCommand(unittest.TestCase):
 
