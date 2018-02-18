@@ -191,6 +191,9 @@ class TestGetMaxSpendableAmountForClaim(unittest.TestCase):
         self.assertEqual(9.0, amount)
         amount = cmds.get_max_spendable_amount_for_claim("test1")
         self.assertEqual(10.0, amount)
+        # when the claim doesn't exist it should just list the confirmed balance
+        amount = cmds.get_max_spendable_amount_for_claim("test2")
+        self.assertEqual(8.0, amount)
 
     def test_get_max_spendable_amount_for_claim_multiple_claims(self):
         cmds = MocCommands()
