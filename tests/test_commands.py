@@ -173,6 +173,33 @@ class TestGetBalanceCommand(unittest.TestCase):
         cmds.wallet.add_claim_transaction('test', 5000123000)
         self.assertEqual({'confirmed': '60.00246'}, cmds.getbalance())
 
+    def test_getbalance_exclude_claimtrie(self):
+        cmds = MocCommands()
+        cmds.wallet.add_address_transaction(1000123000)
+        cmds.wallet.add_claim_transaction('test', 5000123000)
+        self.assertEqual({'confirmed': '10.00123'}, cmds.getbalance(exclude_claimtrietx=True))
+
+
+class TestGetMaxSpendableAmountForClaim(unittest.TestCase):
+
+    def test_get_max_spendable_amount_for_claim(self):
+        cmds = MocCommands()
+        cmds.wallet.add_address_transaction(800000000)
+        cmds.wallet.add_claim_transaction('test0', 100000000)
+        cmds.wallet.add_claim_transaction('test1', 200000000)
+        amount = cmds.get_max_spendable_amount_for_claim('test0')
+        self.assertEqual(9.0, amount)
+        amount = cmds.get_max_spendable_amount_for_claim("test1")
+        self.assertEqual(10.0, amount)
+
+    def test_get_max_spendable_amount_for_claim_multiple_claims(self):
+        cmds = MocCommands()
+        cmds.wallet.add_address_transaction(800000000)
+        cmds.wallet.add_claim_transaction('test0', 100000000)
+        cmds.wallet.add_claim_transaction('test0', 200000000)
+        result = cmds.get_max_spendable_amount_for_claim('test0')
+        self.assertEqual(False, result['success'])
+
 
 class TestPassthroughNetworkCommands(unittest.TestCase):
 
@@ -659,18 +686,6 @@ class TestSupportCommand(unittest.TestCase):
         self.assertEqual(False, out['success'])
         self.assertEqual('Not enough funds', out['reason'])
 
-    def test_get_max_spendable_amount_for_claim(self):
-        cmds = MocCommands()
-        cmds.wallet.add_address_transaction(800000000)
-        cmds.wallet.add_claim_transaction('test', 200000000)
-        cmds.wallet.add_claim_transaction('test1', 200000000)
-        cmds.wallet.add_claim_transaction('test1', 300000000)
-        amount = cmds.get_max_spendable_amount_for_claim("test")
-        self.assertEqual(10.0, amount)
-        amount = cmds.get_max_spendable_amount_for_claim("test1")
-        self.assertEqual(False, amount[success])
-        amount = cmds.get_max_spendable_amount_for_claim("test2")
-        self.assertEqual(8.0, amount)
 
 class TestSendWithSupportCommand(unittest.TestCase):
 
