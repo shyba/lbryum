@@ -1,7 +1,6 @@
 import base64
 import hashlib
 import hmac
-import re
 import struct
 import logging
 import aes
@@ -12,21 +11,17 @@ from ecdsa.ecdsa import curve_secp256k1, generator_secp256k1
 from ecdsa.ellipticcurve import Point
 from ecdsa.util import number_to_string, string_to_number
 
+from lbryschema.address import public_key_to_address
+from lbryschema.schema import B58_CHARS
+from lbryschema.base import b58encode_with_checksum, b58decode_strip_checksum
+
 from lbryum import msqr
-from lbryum.base import base_decode, base_encode, EncodeBase58Check, DecodeBase58Check, __b58chars
 from lbryum.util import print_error, rev_hex, var_int, int_to_hex
 from lbryum.hashing import Hash, sha256, hash_160
 from lbryum.errors import InvalidPassword, InvalidClaimId
 from lbryum.constants import CLAIM_ID_SIZE
 
 log = logging.getLogger(__name__)
-
-# address prefixes are set when the blockchain is initialized by blockchain.get_blockchain
-# the default values are for lbrycrd_main
-global PUBKEY_ADDRESS
-global SCRIPT_ADDRESS
-PUBKEY_ADDRESS = (0, 85)
-SCRIPT_ADDRESS = (5, 122)
 
 # AES encryption
 EncodeAES = lambda secret, s: base64.b64encode(aes.encryptData(secret, s))
@@ -147,38 +142,6 @@ def i2o_ECPublicKey(pubkey, compressed=False):
 # functions from pywallet
 
 
-def public_key_to_bc_address(public_key):
-    h160 = hash_160(public_key)
-    return hash_160_to_bc_address(h160)
-
-
-def hash_160_to_bc_address(h160, addrtype=0):
-    if addrtype == PUBKEY_ADDRESS[0]:
-        c = chr(PUBKEY_ADDRESS[1])
-    elif addrtype == SCRIPT_ADDRESS[0]:
-        c = chr(SCRIPT_ADDRESS[1])
-    else:
-        raise Exception("Invalid address prefix")
-
-    vh160 = c + h160
-    h = Hash(vh160)
-    addr = vh160 + h[0:4]
-    return base_encode(addr, base=58)
-
-
-def bc_address_to_hash_160(addr):
-    bytes = base_decode(addr, 25, base=58)
-    addr_without_checksum, addr_checksum = bytes[:21], bytes[21:]
-    if Hash(addr_without_checksum)[:4] != addr_checksum:
-        raise Exception("Invalid address checksum")
-    if bytes[0] == chr(PUBKEY_ADDRESS[1]):
-        return PUBKEY_ADDRESS[0], bytes[1:21]
-    elif bytes[0] == chr(SCRIPT_ADDRESS[1]):
-        return SCRIPT_ADDRESS[0], bytes[1:21]
-    else:
-        raise Exception("Invalid address prefix")
-
-
 def PrivKeyToSecret(privkey):
     return privkey[9:9 + 32]
 
@@ -187,11 +150,11 @@ def SecretToASecret(secret, compressed=False, addrtype=0):
     vchIn = chr((addrtype + 128) & 255) + secret
     if compressed:
         vchIn += '\01'
-    return EncodeBase58Check(vchIn)
+    return b58encode_with_checksum(vchIn)
 
 
 def ASecretToSecret(key, addrtype=0):
-    vch = DecodeBase58Check(key)
+    vch = b58decode_strip_checksum(key)
     if vch and vch[0] == chr((addrtype + 128) & 255):
         return vch[1:]
     elif is_minikey(key):
@@ -232,25 +195,8 @@ def public_key_from_private_key(sec):
 
 def address_from_private_key(sec):
     public_key = public_key_from_private_key(sec)
-    address = public_key_to_bc_address(public_key.decode('hex'))
+    address = public_key_to_address(public_key.decode('hex'))
     return address
-
-
-def is_valid(addr):
-    return is_address(addr)
-
-
-def is_address(addr):
-    ADDRESS_RE = re.compile('[1-9A-HJ-NP-Za-km-z]{26,}\\Z')
-    if not ADDRESS_RE.match(addr):
-        return False
-    try:
-        addrtype, h = bc_address_to_hash_160(addr)
-    except Exception:
-        return False
-    if addrtype not in [0, 5]:
-        return False
-    return addr == hash_160_to_bc_address(h, addrtype)
 
 
 def is_private_key(key):
@@ -270,7 +216,7 @@ def is_minikey(text):
     # suffixed with '?' have its SHA256 hash begin with a zero byte.
     # They are widely used in Casascius physical bitoins.
     return (len(text) >= 20 and text[0] == 'S'
-            and all(c in __b58chars for c in text)
+            and all(c in B58_CHARS for c in text)
             and ord(sha256(text + '?')[0]) == 0)
 
 
@@ -427,7 +373,7 @@ class EC_KEY(object):
         public_key.verify_digest(sig[1:], h, sigdecode=ecdsa.util.sigdecode_string)
         pubkey = point_to_ser(public_key.pubkey.point, compressed)
         # check that we get the original signing address
-        addr = public_key_to_bc_address(pubkey)
+        addr = public_key_to_address(pubkey)
         if address != addr:
             raise Exception("Bad signature")
 
@@ -573,7 +519,7 @@ def _get_headers(testnet):
 
 
 def deserialize_xkey(xkey):
-    xkey = DecodeBase58Check(xkey)
+    xkey = b58decode_strip_checksum(xkey)
     assert len(xkey) == 78
 
     xkey_header = xkey[0:4].encode('hex')
@@ -616,7 +562,7 @@ def xpub_from_xprv(xprv, testnet=False):
     K, cK = get_pubkeys_from_secret(k)
     header_pub, _ = _get_headers(testnet)
     xpub = header_pub.decode('hex') + chr(depth) + fingerprint + child_number + c + cK
-    return EncodeBase58Check(xpub)
+    return b58encode_with_checksum(xpub)
 
 
 def bip32_root(seed, testnet=False):
@@ -628,7 +574,7 @@ def bip32_root(seed, testnet=False):
     xprv = (header_priv + "00" + "00000000" + "00000000").decode("hex") + master_c + chr(
         0) + master_k
     xpub = (header_pub + "00" + "00000000" + "00000000").decode("hex") + master_c + cK
-    return EncodeBase58Check(xprv), EncodeBase58Check(xpub)
+    return b58encode_with_checksum(xprv), b58encode_with_checksum(xpub)
 
 
 def xpub_from_pubkey(cK, testnet=False):
@@ -636,7 +582,7 @@ def xpub_from_pubkey(cK, testnet=False):
     assert cK[0] in ['\x02', '\x03']
     master_c = chr(0) * 32
     xpub = (header_pub + "00" + "00000000" + "00000000").decode("hex") + master_c + cK
-    return EncodeBase58Check(xpub)
+    return b58encode_with_checksum(xpub)
 
 
 def bip32_private_derivation(xprv, branch, sequence, testnet=False):
@@ -660,7 +606,7 @@ def bip32_private_derivation(xprv, branch, sequence, testnet=False):
     K, cK = get_pubkeys_from_secret(k)
     xprv = header_priv.decode('hex') + chr(depth) + fingerprint + child_number + c + chr(0) + k
     xpub = header_pub.decode('hex') + chr(depth) + fingerprint + child_number + c + cK
-    return EncodeBase58Check(xprv), EncodeBase58Check(xpub)
+    return b58encode_with_checksum(xprv), b58encode_with_checksum(xpub)
 
 
 def bip32_public_derivation(xpub, branch, sequence, testnet=False):
@@ -679,7 +625,7 @@ def bip32_public_derivation(xpub, branch, sequence, testnet=False):
     fingerprint = hash_160(parent_cK)[0:4]
     child_number = ("%08X" % i).decode('hex')
     xpub = header_pub.decode('hex') + chr(depth) + fingerprint + child_number + c + cK
-    return EncodeBase58Check(xpub)
+    return b58encode_with_checksum(xpub)
 
 
 def bip32_private_key(sequence, k, chain):

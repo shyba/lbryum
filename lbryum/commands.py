@@ -18,6 +18,7 @@ from lbryschema.decode import smart_decode
 from lbryschema.error import DecodeError
 from lbryschema.signer import SECP256k1, get_signer
 from lbryschema.uri import URIParseError, parse_lbry_uri
+from lbryschema.address import hash_160_bytes_to_address, is_address
 
 from lbryum import __version__
 from lbryum.contacts import Contacts
@@ -25,10 +26,9 @@ from lbryum.constants import COIN, TYPE_ADDRESS, TYPE_CLAIM, TYPE_SUPPORT, TYPE_
 from lbryum.constants import RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS, MAX_BATCH_QUERY_SIZE
 from lbryum.hashing import Hash, hash_160, hash_encode
 from lbryum.claims import verify_proof
-from lbryum.lbrycrd import hash_160_to_bc_address, is_address, decode_claim_id_hex
+from lbryum.lbrycrd import decode_claim_id_hex
 from lbryum.lbrycrd import encode_claim_id_hex, encrypt_message, public_key_from_private_key
 from lbryum.lbrycrd import address_from_private_key, verify_message
-from lbryum.base import base_decode
 from lbryum.transaction import Transaction
 from lbryum.transaction import decode_claim_script, deserialize as deserialize_transaction
 from lbryum.transaction import get_address_from_output_script, script_GetOp
@@ -332,7 +332,7 @@ class Commands(object):
         """Create multisig address"""
         assert isinstance(pubkeys, list), (type(num), type(pubkeys))
         redeem_script = Transaction.multisig_script(pubkeys, num)
-        address = hash_160_to_bc_address(hash_160(redeem_script.decode('hex')), 5)
+        address = hash_160_bytes_to_address(hash_160(redeem_script.decode('hex')), 5)
         return {'address': address, 'redeemScript': redeem_script}
 
     @command('w')
@@ -1128,7 +1128,7 @@ class Commands(object):
     def _validate_signed_claim(claim, claim_address, certificate):
         if not claim.has_signature:
             raise Exception("Claim is not signed")
-        if not base_decode(claim_address, ADDRESS_LENGTH, 58):
+        if not is_address(claim_address):
             raise Exception("Not given a valid claim address")
         try:
             if claim.validate_signature(claim_address, certificate.protobuf):
@@ -1964,11 +1964,11 @@ class Commands(object):
         # validate claim and change address if either where given, get least used if not provided
         if claim_addr is None:
             claim_addr = self.wallet.get_least_used_address()
-        if not base_decode(claim_addr, ADDRESS_LENGTH, 58):
+        if not is_address(claim_addr):
             return {'error': 'invalid claim address'}
         if change_addr is None:
             change_addr = self.wallet.get_least_used_address(for_change=True)
-        if not base_decode(change_addr, ADDRESS_LENGTH, 58):
+        if not is_address(change_addr):
             return {'error': 'invalid change address'}
 
         amount = int(COIN * amount)
@@ -2443,11 +2443,11 @@ class Commands(object):
         # if they were not provided default to the least used addresses
         if not claim_addr:
             claim_addr = self.wallet.get_least_used_address()
-        if not base_decode(claim_addr, ADDRESS_LENGTH, 58):
+        if not is_address(claim_addr):
             return {'error': 'invalid claim address'}
         if not change_addr:
             change_addr = self.wallet.get_least_used_address(for_change=True)
-        if not base_decode(change_addr, ADDRESS_LENGTH, 58):
+        if not is_address(change_addr):
             return {'error': 'invalid change address'}
 
         # default to hex encoding for the claim value,

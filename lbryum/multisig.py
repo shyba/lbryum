@@ -1,6 +1,8 @@
 import logging
+
+from lbryschema.address import hash_160_bytes_to_address
+
 from lbryum.transaction import Transaction
-from lbryum.lbrycrd import hash_160_to_bc_address
 from lbryum.hashing import hash_160
 from lbryum.account import Account
 from lbryum.bip32 import BIP32_Account
@@ -33,7 +35,7 @@ class Multisig_Account(BIP32_Account):
 
     def pubkeys_to_address(self, pubkeys):
         redeem_script = Transaction.multisig_script(sorted(pubkeys), self.m)
-        address = hash_160_to_bc_address(hash_160(redeem_script.decode('hex')), 5)
+        address = hash_160_bytes_to_address(hash_160(redeem_script.decode('hex')), 5)
         return address
 
     def get_address(self, for_change, n):
