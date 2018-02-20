@@ -79,10 +79,12 @@ class MocWallet(wallet.NewWallet):
 
     def add_claim_transaction(self, name, amount, value=''):
         out_address = self.create_new_address()
-        return self._add_transaction(
+        tx = self._add_transaction(
             out_address, amount,
             (TYPE_CLAIM | TYPE_SCRIPT, ((name, value), out_address), amount)
         )
+        self.claimtrie_transactions[tx.hash() + ':0'] = tx._outputs[0]
+        return tx
 
     def add_support_transaction(self, name, amount, claim_id, claim_addr):
         out_address = self.create_new_address()
