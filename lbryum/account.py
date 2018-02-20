@@ -1,7 +1,7 @@
 import logging
 
+from lbryschema.address import public_key_to_address
 from lbryum.lbrycrd import pw_decode, pw_encode, address_from_private_key
-from lbryum.lbrycrd import public_key_to_bc_address
 from lbryum.errors import InvalidPassword
 
 log = logging.getLogger(__name__)
@@ -15,8 +15,6 @@ class Account(object):
         # addresses will not be stored on disk
         self.receiving_addresses = map(self.pubkeys_to_address, self.receiving_pubkeys)
         self.change_addresses = map(self.pubkeys_to_address, self.change_pubkeys)
-
-
 
     def dump(self):
         return {'receiving': self.receiving_pubkeys, 'change': self.change_pubkeys}
@@ -51,7 +49,7 @@ class Account(object):
         return address
 
     def pubkeys_to_address(self, pubkey):
-        return public_key_to_bc_address(pubkey.decode('hex'))
+        return public_key_to_address(pubkey.decode('hex'))
 
     def has_change(self):
         return True

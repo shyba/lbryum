@@ -1,6 +1,5 @@
 import re
-
-from lbryum.lbrycrd import is_address
+from lbryschema.address import is_address
 from lbryum.store import StoreDict
 
 

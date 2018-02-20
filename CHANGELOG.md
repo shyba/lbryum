@@ -34,6 +34,8 @@ labeled as 2.7.1. Subsequent releases will follow
   * Information about abandoned claim/update/support is now returned in `claimhistory` command
   * Changed `offline_parse_and_validate_claim_result` and `parse_and_validate_claim_result` to include a permanent URL to claim and/or certificate.
   * Broadcast option for `sweep` command
+  * Use address encoding, decoding, and validation functions from lbryschema
+  * Configure address prefixes in lbryschema
 
 ### Added
   * Added `getleastusedchangeaddress` command
@@ -49,6 +51,7 @@ labeled as 2.7.1. Subsequent releases will follow
   * `get_max_spendable_amount_for_claim` to get the max amount that can be used to update a claim
 
 ### Removed
+  * Removed lbryum/base.py
   * Removed `tiphistory`, `paytoandsend`, `paytomany`, and `paytomanyandsend` commands
   *
 

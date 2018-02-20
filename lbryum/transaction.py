@@ -4,14 +4,17 @@ import logging
 import ecdsa
 from ecdsa.curves import SECP256k1
 
+from lbryschema.address import hash_160_bytes_to_address, public_key_to_address
+from lbryschema.address import address_to_hash_160
+
 from lbryum.constants import TYPE_SCRIPT, TYPE_PUBKEY, TYPE_UPDATE, TYPE_SUPPORT, TYPE_CLAIM
 from lbryum.constants import TYPE_ADDRESS, NO_SIGNATURE
 from lbryum.opcodes import opcodes, match_decoded, script_GetOp
 from lbryum.bcd_data_stream import BCDataStream
 from lbryum.hashing import Hash, hash_160, hash_encode
-from lbryum.lbrycrd import hash_160_to_bc_address, bc_address_to_hash_160, op_push
+from lbryum.lbrycrd import op_push
 from lbryum.lbrycrd import point_to_ser, MyVerifyingKey, MySigningKey
-from lbryum.lbrycrd import public_key_to_bc_address, regenerate_key, public_key_from_private_key
+from lbryum.lbrycrd import regenerate_key, public_key_from_private_key
 from lbryum.lbrycrd import encode_claim_id_hex, claim_id_hash
 from lbryum.util import print_error, profiler, var_int, int_to_hex, parse_sig, rev_hex
 
@@ -29,11 +32,11 @@ def parse_xpub(x_pubkey):
         addrtype = ord(x_pubkey[2:4].decode('hex'))
         hash160 = x_pubkey[4:].decode('hex')
         pubkey = None
-        address = hash_160_to_bc_address(hash160, addrtype)
+        address = hash_160_bytes_to_address(hash160, addrtype)
     else:
         raise BaseException("Cannnot parse pubkey")
     if pubkey:
-        address = public_key_to_bc_address(pubkey.decode('hex'))
+        address = public_key_to_address(pubkey.decode('hex'))
     return pubkey, address
 
 
@@ -102,7 +105,7 @@ def parse_scriptSig(d, bytes):
     d['x_pubkeys'] = x_pubkeys
     d['pubkeys'] = pubkeys
     d['redeemScript'] = redeemScript
-    d['address'] = hash_160_to_bc_address(hash_160(redeemScript.decode('hex')), 5)
+    d['address'] = hash_160_bytes_to_address(hash_160(redeemScript.decode('hex')), 5)
 
 
 class NameClaim(object):
@@ -218,10 +221,10 @@ def get_address_from_output_script(script_bytes):
         output_val = decoded[0][1].encode('hex')
         output_type |= TYPE_PUBKEY
     elif match_decoded(decoded, match_p2pkh):
-        output_val = hash_160_to_bc_address(decoded[2][1])
+        output_val = hash_160_bytes_to_address(decoded[2][1])
         output_type |= TYPE_ADDRESS
     elif match_decoded(decoded, match_p2sh):
-        output_val = hash_160_to_bc_address(decoded[1][1], 5)
+        output_val = hash_160_bytes_to_address(decoded[1][1], 5)
         output_type |= TYPE_ADDRESS
     else:
         output_val = bytes
@@ -405,7 +408,7 @@ class Transaction(object):
         if output_type & TYPE_SCRIPT:
             script += addr.encode('hex')
         elif output_type & TYPE_ADDRESS:  # op_2drop, op_drop
-            addrtype, hash_160 = bc_address_to_hash_160(addr)
+            addrtype, hash_160 = address_to_hash_160(addr)
             if addrtype == 0:
                 script += '76a9'  # op_dup, op_hash_160
                 script += push_script(hash_160.encode('hex'))
@@ -452,7 +455,7 @@ class Transaction(object):
             if not p2sh:
                 x_pubkey = pubkeys[0]
                 if x_pubkey is None:
-                    addrtype, h160 = bc_address_to_hash_160(txin['address'])
+                    addrtype, h160 = address_to_hash_160(txin['address'])
                     x_pubkey = 'fd' + (chr(addrtype) + h160).encode('hex')
                 script += push_script(x_pubkey)
             else:
@@ -653,7 +656,7 @@ class Transaction(object):
             if type & TYPE_ADDRESS:
                 addr = x
             elif type & TYPE_PUBKEY:
-                addr = public_key_to_bc_address(x.decode('hex'))
+                addr = public_key_to_address(x.decode('hex'))
             else:
                 addr = 'SCRIPT ' + x.encode('hex')
             o.append((addr, v))  # consider using yield (addr, v)

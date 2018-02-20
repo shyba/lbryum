@@ -1,7 +1,8 @@
 import logging
 
+from lbryschema.base import b58encode_with_checksum, b58decode_strip_checksum
+
 from lbryum.util import rev_hex, int_to_hex, is_extended_pubkey
-from lbryum.base import DecodeBase58Check, EncodeBase58Check
 from lbryum.lbrycrd import deserialize_xkey, bip32_public_derivation
 from lbryum.lbrycrd import CKD_pub, bip32_private_key
 from lbryum.account import Account
@@ -127,14 +128,14 @@ class BIP32_Account(Account):
         # unsorted
         s = ''.join(map(lambda x: int_to_hex(x, 2), (for_change, n)))
         xpubs = self.get_master_pubkeys()
-        return map(lambda xpub: 'ff' + DecodeBase58Check(xpub).encode('hex') + s, xpubs)
+        return map(lambda xpub: 'ff' + b58decode_strip_checksum(xpub).encode('hex') + s, xpubs)
 
     @classmethod
     def parse_xpubkey(cls, pubkey):
         assert is_extended_pubkey(pubkey)
         pk = pubkey.decode('hex')
         pk = pk[1:]
-        xkey = EncodeBase58Check(pk[0:78])
+        xkey = b58encode_with_checksum(pk[0:78])
         dd = pk[78:]
         s = []
         while dd:
