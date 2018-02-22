@@ -1332,8 +1332,11 @@ class Abstract_Wallet(PrintError):
     def stop_threads(self):
         if self.network:
             self.network.remove_jobs([self.synchronizer, self.verifier])
-            self.synchronizer.release()
-            self.synchronizer = None
+            if self.synchronizer:
+                self.synchronizer.release()
+                self.synchronizer = None
+            else:
+                log.warning("synchronizer already released")
             self.verifier = None
             # Now no references to the syncronizer or verifier
             # remain so they will be GC-ed
