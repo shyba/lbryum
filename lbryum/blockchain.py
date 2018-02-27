@@ -80,6 +80,8 @@ class LbryCrd(PrintError):
             prev_header = self.read_header(index * BLOCKS_PER_CHUNK - 1)
         for i in range(BLOCKS_PER_CHUNK):
             raw_header = data[i * HEADER_SIZE:(i + 1) * HEADER_SIZE]
+            if not raw_header:
+                continue
             header = self.deserialize_header(raw_header)
             bits, target = self.get_target(index * BLOCKS_PER_CHUNK + i, prev_header, header)
             if header is not None:
