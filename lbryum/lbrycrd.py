@@ -19,7 +19,7 @@ from lbryum import msqr
 from lbryum.util import print_error, rev_hex, var_int, int_to_hex
 from lbryum.hashing import Hash, sha256, hash_160
 from lbryum.errors import InvalidPassword, InvalidClaimId
-from lbryum.constants import CLAIM_ID_SIZE
+from lbryum.constants import CLAIM_ID_SIZE, TYPE_CLAIM, LBRYCRD_MIN_FEE_PER_NAMECLAIM_CHAR
 
 log = logging.getLogger(__name__)
 
@@ -45,6 +45,18 @@ def decode_claim_id_hex(claim_id_hex):
 def encode_claim_id_hex(claim_id):
     return rev_hex(claim_id.encode('hex'))
 
+
+def calculate_lbrycrd_min_fee(outputs):
+    """calculate min fee that must be paid for a claimtrie transaction, outputs
+    is the same list of outputs that is fed to Wallet.make_unsigned_transaction()
+    """
+    min_fee = 0
+    for type, data, value in outputs:
+        if type & (TYPE_CLAIM):
+            claim_name = data[0][0]
+            min_fee += len(claim_name)*LBRYCRD_MIN_FEE_PER_NAMECLAIM_CHAR
+
+    return min_fee
 
 def strip_PKCS7_padding(s):
     """return s stripped of PKCS7 padding"""

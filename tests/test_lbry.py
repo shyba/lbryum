@@ -6,7 +6,8 @@ from lbryschema.address import hash_160_bytes_to_address, address_to_hash_160, i
 from lbryum import claims
 from lbryum import commands
 from lbryum.hashing import Hash, PoWHash
-from lbryum.lbrycrd import claim_id_hash
+from lbryum.lbrycrd import claim_id_hash, calculate_lbrycrd_min_fee
+from lbryum.constants import TYPE_CLAIM, TYPE_ADDRESS, LBRYCRD_MIN_FEE_PER_NAMECLAIM_CHAR
 from lbryum.util import rev_hex
 
 
@@ -119,3 +120,24 @@ class Test_Lbry(unittest.TestCase):
         self.assertFalse(is_address("bYqee1aDgxA5oB4qr3PzjQ5xXzwGuyymH"))
         self.assertTrue(is_address("bYqee1aDgxA5oB4qr3PzjQ5xXzwGuyymH6"))
         self.assertTrue(is_address("bPJ9RPtyJSW9k5fGtJaxt3UhzUZSi59X9m"))
+
+    def test_calculate_lbrycrd_min_fee(self):
+        address = "bPJ9RPtyJSW9k5fGtJaxt3UhzUZSi59X9m"
+        claim_name = '1234'
+        val = ((claim_name, 'test'), address)
+        outputs =[(TYPE_CLAIM | TYPE_ADDRESS, val, 1)]
+        out = calculate_lbrycrd_min_fee(outputs)
+        self.assertEqual(LBRYCRD_MIN_FEE_PER_NAMECLAIM_CHAR*4, out)
+
+        val = (('12', 'test'), address)
+        val2 = (('123', 'test'), address)
+        outputs =[(TYPE_CLAIM, val, 1), (TYPE_CLAIM, val2, 1)]
+        out = calculate_lbrycrd_min_fee(outputs)
+        self.assertEqual(LBRYCRD_MIN_FEE_PER_NAMECLAIM_CHAR*5, out)
+
+        outputs =[(TYPE_ADDRESS, address, 1)]
+        out = calculate_lbrycrd_min_fee(outputs)
+        self.assertEqual(0, out)
+
+
+
