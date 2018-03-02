@@ -942,6 +942,10 @@ class Commands(object):
             out.append(item)
         return out
 
+    @command('n')
+    def gettransactionheight(self, txid):
+        return self.network.synchronous_get(('blockchain.transaction.get_height', [txid]))
+
     @command('w')
     def gettransaction(self, txid):
         """Retrieve a transaction in deserialized json format"""
