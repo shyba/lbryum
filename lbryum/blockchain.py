@@ -1,13 +1,13 @@
 import os
-import urllib
-import socket
+import shutil
 import logging
+import requests
 import lbryschema
 from lbryum.util import hex_to_int, PrintError, int_to_hex, rev_hex
 from lbryum.hashing import hash_encode, Hash, PoWHash
 from lbryum.errors import ChainValidationError
 from lbryum.constants import HEADER_SIZE, HEADERS_URL, BLOCKS_PER_CHUNK, NULL_HASH
-from lbryum.constants import blockchain_params
+from lbryum.constants import blockchain_params, BLOCK_DIFF_AT_WHICH_TO_DOWNLOAD
 
 log = logging.getLogger(__name__)
 
@@ -133,20 +133,17 @@ class LbryCrd(PrintError):
             filename = '%s_headers' % self.BLOCKCHAIN_NAME.split("_")[1]
         return os.path.join(self.config.path, filename)
 
-    def init_headers_file(self):
+    def _download_headers_from_s3(self):
         filename = self.path()
-        if os.path.exists(filename):
-            if self.BLOCKCHAIN_NAME == 'lbrycrd_regtest':
-                open(filename, 'w').close()
-            return
         try:
             if self.BLOCKCHAIN_NAME != "lbrycrd_main":
                 raise Exception("headers for %s are not available from s3" % self.BLOCKCHAIN_NAME)
-            socket.setdefaulttimeout(30)
             log.info("downloading headers from %s", self.headers_url)
             self.retrieving_headers = True
             try:
-                urllib.urlretrieve(self.headers_url, filename)
+                headers = requests.get(url, stream=True, timeout=30)
+                with open(filename, 'wb') as f:
+                    shutil.copyfileobj(headers.raw, f)
             except:
                 raise
             finally:
@@ -155,6 +152,21 @@ class LbryCrd(PrintError):
         except Exception:
             log.warning("download failed. creating empty headers file: %s", filename)
             open(filename, 'wb+').close()
+
+    def init_headers_file(self):
+        filename = self.path()
+        if os.path.exists(filename):
+            if self.BLOCKCHAIN_NAME == 'lbrycrd_regtest':
+                open(filename, 'w').close()
+            elif self.BLOCKCHAIN_NAME == 'lbrycrd_main':
+                bc_headers_headers = requests.head(HEADERS_URL)
+                size_of_headers = bc_headers_headers.headers.get("content-length")
+                num_of_blocks = size_of_headers / HEADER_SIZE
+                if num_of_blocks - self.height() > BLOCK_DIFF_AT_WHICH_TO_DOWNLOAD
+                    self._download_headers_from_s3()
+            return
+        else:
+            self._download_headers_from_s3()
 
     def save_chunk(self, index, chunk):
         filename = self.path()
