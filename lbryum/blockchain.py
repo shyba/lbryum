@@ -141,8 +141,10 @@ class LbryCrd(PrintError):
             log.info("downloading headers from %s", self.headers_url)
             self.retrieving_headers = True
             try:
-                headers = requests.get(url, stream=True, timeout=30)
+                headers = requests.get(self.headers_url, stream=True, timeout=30)
                 with open(filename, 'wb') as f:
+                    # this answer said shutil was faster, so I used it
+                    # https://stackoverflow.com/a/39217788
                     shutil.copyfileobj(headers.raw, f)
             except:
                 raise
@@ -161,8 +163,8 @@ class LbryCrd(PrintError):
             elif self.BLOCKCHAIN_NAME == 'lbrycrd_main':
                 bc_headers_headers = requests.head(HEADERS_URL)
                 size_of_headers = bc_headers_headers.headers.get("content-length")
-                num_of_blocks = size_of_headers / HEADER_SIZE
-                if num_of_blocks - self.height() > BLOCK_DIFF_AT_WHICH_TO_DOWNLOAD
+                num_of_blocks = int(size_of_headers) / HEADER_SIZE
+                if num_of_blocks - self.height() > BLOCK_DIFF_AT_WHICH_TO_DOWNLOAD:
                     self._download_headers_from_s3()
             return
         else:

@@ -36,6 +36,7 @@ labeled as 2.7.1. Subsequent releases will follow
   * Broadcast option for `sweep` command
   * Use address encoding, decoding, and validation functions from lbryschema
   * Configure address prefixes in lbryschema
+  * Changed the default behaviour of syncing the blockchain if `blockchain_headers` file exist, now it download the header file from s3 if the difference between local height and remote height is 200
 
 ### Added
   * Added `getleastusedchangeaddress` command
