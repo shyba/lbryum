@@ -20,7 +20,7 @@ labeled as 2.7.1. Subsequent releases will follow
   *
 
 ### Changed
-  *
+  * Transaction fee now takes into consideration claims the same as lbrycrd patch https://github.com/lbryio/lbrycrd/pull/95
   *
 
 ### Added
