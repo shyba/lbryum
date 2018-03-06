@@ -35,7 +35,7 @@ class TestMiscCommands(unittest.TestCase):
     def test_commands(self):
         cmds = MocCommands()
         self.assertEqual(
-            97, len(cmds.commands().split())
+            96, len(cmds.commands().split())
         )
 
     def test_get_parser(self):
@@ -212,13 +212,6 @@ class TestPassthroughNetworkCommands(unittest.TestCase):
             'blockchain.block.get_block': lambda arg: arg
         })
         self.assertEqual(['the hash'], cmds.getblock('the hash'))
-
-    def test_getclaimtrie(self):
-        cmds = MocCommands()
-        cmds.network = MocNetwork({
-            'blockchain.claimtrie.get': lambda _: 'CLAIM TRIE'
-        })
-        self.assertEqual('CLAIM TRIE', cmds.getclaimtrie())
 
 
 class TestGetTransactionCommand(unittest.TestCase):

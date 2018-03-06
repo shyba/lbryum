@@ -53,8 +53,7 @@ labeled as 2.7.1. Subsequent releases will follow
 
 ### Removed
   * Removed lbryum/base.py
-  * Removed `tiphistory`, `paytoandsend`, `paytomany`, and `paytomanyandsend` commands
-  *
+  * Removed `tiphistory`, `paytoandsend`, `paytomany`, `getclaimtrie`, and `paytomanyandsend` commands
 
 
 ## [3.1.11] - 2017-11-08

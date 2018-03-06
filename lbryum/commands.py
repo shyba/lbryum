@@ -1639,14 +1639,6 @@ class Commands(object):
         return out
 
     @command('n')
-    def getclaimtrie(self):
-        """
-        Return the entire claim trie
-        """
-
-        return self.network.synchronous_get(('blockchain.claimtrie.get', []))
-
-    @command('n')
     def getclaimbyid(self, claim_id, raw=False):
         """
         Get claim by claim id
