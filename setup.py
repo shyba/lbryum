@@ -20,7 +20,7 @@ requires = [
     'protobuf',
     'jsonschema',
     'keyring==10.4.0',
-    'lbryschema==0.0.15rc2',
+    'lbryschema==0.0.15rc3',
 ]
 
 console_scripts = [
