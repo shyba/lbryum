@@ -18,7 +18,7 @@ requires = [
     'six',
     'appdirs',
     'keyring==10.4.0',
-    'lbryschema==0.0.15rc3',
+    'lbryschema==0.0.15',
 ]
 
 console_scripts = [

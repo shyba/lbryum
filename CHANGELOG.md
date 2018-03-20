@@ -8,52 +8,74 @@ labeled as 2.7.1. Subsequent releases will follow
 
 ## [Unreleased]
 ### Security
-  * Stop allowing CORS for the JSON-RPC server (applies to lbryum daemon). See [electrum/issues/3374](https://github.com/spesmilo/electrum/issues/3374)
+  *
   *
 
 ### Fixed
-  * Use lock when performing WalletStorage.write()
-  * Fixed `sendclaimtoaddress` for signed content claims
-  * Fixed `https://github.com/lbryio/lbryum/issues/188`
-  * Fixed main account not being created by `restore`
-  * Fixed claim result from `getcertificatesforsigning` with only the `is_mine` field being returned for claims that aren't yet returned by `getclaimsbyids`. This caused bugs when making claims with channels that were not yet confirmed (https://github.com/lbryio/lbry/issues/1037).
+  *
+  *
 
 ### Deprecated
   *
   *
 
 ### Changed
-  * Improved speed of `getunusedaddress`
-  * Moved storage.write call in `getunusedaddress` to `Deterministic_Wallet`
-  * By default use the least used change address rather than generating new ones for claims.
-  * Only consider addresses with less than 100 utxos for re-use.
-  * Set the blockchain to use in lbryschema when it is set in lbryum
-  * Use separate headers files for different chains, the default `blockchain_headers` for lbrycrd_main is unchanged. Regtest headers are saved to `regtest_headers`, and testnet to `testnet_headers`.
-  * Reworked `payto`, `paytoandsend`, `paytomany`, `paytomanyandsend` into single `payto` command
-  * Tip information is now always returned in `claimhistory` command
-  * Information about abandoned claim/update/support is now returned in `claimhistory` command
-  * Changed `offline_parse_and_validate_claim_result` and `parse_and_validate_claim_result` to include a permanent URL to claim and/or certificate.
-  * Broadcast option for `sweep` command
-  * Use address encoding, decoding, and validation functions from lbryschema
-  * Configure address prefixes in lbryschema
+  *
+  *
 
 ### Added
-  * Added `getleastusedchangeaddress` command
-  * Added `getleastusedaddress` command
-  * Added `importcertificateinfo` and `exportcertificateinfo` commands
-  * Added `getcertificatesforsigning` command
-  * Added `lock_wallet`, `decrypt_wallet`, and `update_passwords` functions and `locked` property to `Commands` class
-  * Added OS keyring support for storing the wallet encryption password
-  * Added codecov.io reporting and updated README.rst with coverage badge.
-  * Added `value` and `claim_address` fields to response from `claim`, `update`, and `claimcertificate`
-  * Added `no_password` parameter to `restore` command
-  * Added `--chain` parameter to command line to specify `lbrycrd_regtest` or `lbrycrd_testnet` instead of default `lbrycrd_main`
-  * `gettransactionheight` command to request the height of a txid from lbryum server
-  * `get_max_spendable_amount_for_claim` to get the max amount that can be used to update a claim
+  *
+  *
 
 ### Removed
-  * Removed lbryum/base.py
-  * Removed `tiphistory`, `paytoandsend`, `paytomany`, `getclaimtrie`, and `paytomanyandsend` commands
+  *
+  *
+
+
+## [3.2.0] - 2018-03-20
+### Security
+ * Stop allowing CORS for the JSON-RPC server (applies to lbryum daemon). See [electrum/issues/3374](https://github.com/spesmilo/electrum/issues/3374)
+
+### Fixed
+ * Use lock when performing WalletStorage.write()
+ * Fixed `sendclaimtoaddress` for signed content claims
+ * Fixed `https://github.com/lbryio/lbryum/issues/188`
+ * Fixed main account not being created by `restore`
+ * Fixed claim result from `getcertificatesforsigning` with only the `is_mine` field being returned for claims that aren't yet returned by `getclaimsbyids`. This caused bugs when making claims with channels that were not yet confirmed (https://github.com/lbryio/lbry/issues/1037).
+
+### Changed
+ * Bumped `lbryschema` requirement to 0.0.15 [see changelog](https://github.com/lbryio/lbryschema/blob/master/CHANGELOG.md#0015---2018-03-20)
+ * Improved speed of `getunusedaddress`
+ * Moved storage.write call in `getunusedaddress` to `Deterministic_Wallet`
+ * By default use the least used change address rather than generating new ones for claims.
+ * Only consider addresses with less than 100 utxos for re-use.
+ * Set the blockchain to use in lbryschema when it is set in lbryum
+ * Use separate headers files for different chains, the default `blockchain_headers` for lbrycrd_main is unchanged. Regtest headers are saved to `regtest_headers`, and testnet to `testnet_headers`.
+ * Reworked `payto`, `paytoandsend`, `paytomany`, `paytomanyandsend` into single `payto` command
+ * Tip information is now always returned in `claimhistory` command
+ * Information about abandoned claim/update/support is now returned in `claimhistory` command
+ * Changed `offline_parse_and_validate_claim_result` and `parse_and_validate_claim_result` to include a permanent URL to claim and/or certificate.
+ * Broadcast option for `sweep` command
+ * Use address encoding, decoding, and validation functions from lbryschema
+ * Configure address prefixes in lbryschema
+
+### Added
+ * Added `getleastusedchangeaddress` command
+ * Added `getleastusedaddress` command
+ * Added `importcertificateinfo` and `exportcertificateinfo` commands
+ * Added `getcertificatesforsigning` command
+ * Added `lock_wallet`, `decrypt_wallet`, and `update_passwords` functions and `locked` property to `Commands` class
+ * Added OS keyring support for storing the wallet encryption password
+ * Added codecov.io reporting and updated README.rst with coverage badge.
+ * Added `value` and `claim_address` fields to response from `claim`, `update`, and `claimcertificate`
+ * Added `no_password` parameter to `restore` command
+ * Added `--chain` parameter to command line to specify `lbrycrd_regtest` or `lbrycrd_testnet` instead of default `lbrycrd_main`
+ * `gettransactionheight` command to request the height of a txid from lbryum server
+ * `get_max_spendable_amount_for_claim` to get the max amount that can be used to update a claim
+
+### Removed
+ * Removed lbryum/base.py
+ * Removed `tiphistory`, `paytoandsend`, `paytomany`, `getclaimtrie`, and `paytomanyandsend` commands
 
 
 ## [3.1.11] - 2017-11-08
