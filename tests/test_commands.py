@@ -8,6 +8,7 @@ from lbryschema.signer import SECP256k1
 from lbryum import main
 from lbryum import __version__
 from lbryum.errors import NotEnoughFunds
+from lbryum.constants import LBRYCRD_MIN_FEE_PER_NAMECLAIM_CHAR, COIN
 from lbryum.transaction import Transaction
 from test_data import SAMPLE_CLAIMS_FOR_NAME_RESULT, SAMPLE_CLAIMTRIE_GETVALUE_RESULT,\
     SAMPLE_CLAIMTRIE_GETVALUEFORURI_RESULT, SECP256K1_PRIVATE_KEY
@@ -550,6 +551,18 @@ class TestClaimCommand(unittest.TestCase):
         self.assertEqual(False, out['success'])
         self.assertEqual('Not enough funds', out['reason'])
 
+    def test_claim_fee(self):
+        cmds = MocCommands()
+        cmds.wallet.add_address_transaction(110000000)
+
+        name = '0'*50
+        out = cmds.claim(name, 'value', 1, skip_validate_schema=True, raw=True)
+        self.assertEqual(True, out['success'])
+        self.assertEqual(LBRYCRD_MIN_FEE_PER_NAMECLAIM_CHAR*50, float(out['fee'])*COIN)
+
+        out = cmds.claim('1', 'value', 1, skip_validate_schema=True, raw=True)
+        self.assertEqual(True, out['success'])
+        self.assertEqual(LBRYCRD_MIN_FEE_PER_NAMECLAIM_CHAR, float(out['fee'])*COIN)
 
 class TestRenewClaimCommand(unittest.TestCase):
 

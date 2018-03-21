@@ -36,6 +36,7 @@ from lbryum.lbrycrd import xpub_from_xprv, bip32_private_key
 from lbryum.lbrycrd import encode_claim_id_hex, deserialize_xkey, claim_id_hash, is_private_key
 from lbryum.lbrycrd import public_key_from_private_key
 from lbryum.lbrycrd import bip32_public_derivation, bip32_private_derivation, bip32_root
+from lbryum.lbrycrd import calculate_lbrycrd_min_fee
 
 log = logging.getLogger(__name__)
 # internal ID for imported account
@@ -1158,8 +1159,9 @@ class Abstract_Wallet(PrintError):
 
         # Fee estimator
         if fixed_fee is None:
+            relay_fee = max(self.relayfee(), calculate_lbrycrd_min_fee(outputs))
             fee_estimator = partial(Transaction.fee_for_size,
-                                    self.relayfee(),
+                                    relay_fee,
                                     self.fee_per_kb(config))
         else:
             fee_estimator = lambda size: fixed_fee
