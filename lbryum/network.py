@@ -711,13 +711,17 @@ class Network(DaemonThread):
             return
         rin = [i for i in self.interfaces.values()]
         win = [i for i in self.interfaces.values() if i.unsent_requests]
+        failed = False
         try:
             rout, wout, xout = select.select(rin, win, [], 0.2)
-        except socket.error as (code, msg):
+        except select.error as (code, msg):
             if code == errno.EINTR:
                 return
-            raise
-        assert not xout
+            failed = True
+        if failed or xout:
+            for interface in self.interfaces.values():
+                self.connection_down(interface.server)
+            return
         for interface in wout:
             interface.send_requests()
         for interface in rout:
