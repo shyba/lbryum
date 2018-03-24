@@ -12,7 +12,7 @@ from threading import Lock
 
 from lbryum import __version__ as LBRYUM_VERSION
 from lbryum.constants import COIN, BLOCKS_PER_CHUNK, DEFAULT_PORTS, proxy_modes
-from lbryum.constants import SERVER_RETRY_INTERVAL, NODES_RETRY_INTERVAL
+from lbryum.constants import SERVER_RETRY_INTERVAL, NODES_RETRY_INTERVAL, NETWORK_TIMEOUT
 from lbryum.util import DaemonThread, normalize_version
 from lbryum.blockchain import get_blockchain
 from lbryum.interface import Connection, Interface
@@ -694,10 +694,11 @@ class Network(DaemonThread):
                 # Request headers if it is ahead of our blockchain
                 if not self.bc_request_headers(interface, data):
                     continue
-            elif time.time() - req_time > 30:
-                log.error("blockchain request timed out")
-                self.connection_down(interface.server)
-                continue
+            elif time.time() - req_time > NETWORK_TIMEOUT:
+                if interface.has_timed_out():  # disconnect only if responses are really not being received
+                    log.error("blockchain request timed out")
+                    self.connection_down(interface.server)
+                    continue
             # Put updated request state back at head of deque
             self.bc_requests.appendleft((interface, data))
             break
@@ -770,7 +771,7 @@ class Network(DaemonThread):
         else:
             return 0
 
-    def synchronous_get(self, request, timeout=30):
+    def synchronous_get(self, request, timeout=NETWORK_TIMEOUT):
         queue = Queue.Queue()
         self.send([request], queue.put)
         try:
