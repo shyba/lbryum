@@ -187,6 +187,7 @@ class Interface(PrintError):
                 break
             log.debug("<-- %s", response)
             wire_id = response.get('id', None)
+            self.request_time = time.time()  # got a reply, stop worrying, unanswered requests are handled elsewhere
             if wire_id is None:  # Notification
                 responses.append((None, response))
             else:
