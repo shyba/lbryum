@@ -28,6 +28,7 @@ HEADERS_URL = "https://s3.amazonaws.com/lbry-blockchain-headers/blockchain_heade
 DEFAULT_PORTS = {'t': '50001', 's': '50002', 'h': '8081', 'g': '8082'}
 NODES_RETRY_INTERVAL = 60
 SERVER_RETRY_INTERVAL = 10
+NETWORK_TIMEOUT = 60
 MAX_BATCH_QUERY_SIZE = 500
 proxy_modes = ['socks4', 'socks5', 'http']
 
